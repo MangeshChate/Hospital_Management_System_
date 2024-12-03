@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// This is an Main Schema file where all schema are imported
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+//enums
+
+enum PermissionType {
+  VIEW_DASHBOARD
+  CREATE_PATIENT
+  EDIT_PATIENT
+  DELETE_PATIENT
+  VIEW_REPORTS
+  GENERATE_REPORTS
+  MANAGE_USERS
+  MANAGE_ROLES
+  MANAGE_PERMISSIONS
+  VIEW_FINANCIALS
+  MANAGE_STAFF
+}
+
+//Schema
+
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  fullName  String?
+  password  String
+  roles     UserRole[]
+  sessions  Session[]
+  createdBy   String? //newly added
+  createdAt   DateTime     @default(now()) //newly added
+  updatedBy   String? //newly added
+  updatedAt   DateTime     @updatedAt  //newly added
+  profile   Profile[]
+}
+
+model Permission {
+  id    String         @id @default(uuid())
+  name  PermissionType @unique
+  roles Role[]         @relation("RolePermissions")
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  createdBy   String? //newly added
+  createdAt   DateTime     @default(now()) //newly added
+  updatedBy   String? //newly added
+  updatedAt   DateTime     @updatedAt  //newly added
+  users       UserRole[]
+  permissions Permission[] @relation("RolePermissions")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  roleId    String
+  createdBy   String? //newly added
+  createdAt   DateTime     @default(now()) //newly added
+  updatedBy   String? //newly added
+  updatedAt   DateTime     @updatedAt //newly added
+}
+
+model Profile {
+  id        String  @id @default(uuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  type      String // 'patient' or 'doctor'
+  diagnosis String?
+  specialty String?
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  refreshToken String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
